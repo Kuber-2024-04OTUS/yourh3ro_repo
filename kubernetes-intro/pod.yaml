@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webserver
+  namespace: homework
+spec:
+  initContainers:
+    - name: init-websever
+      image: busybox:1.36.1
+      command: ["/bin/sh", "-c"]
+      volumeMounts:
+        - name: homework-vol
+          mountPath: /init
+      args:
+        - wget -O /init/index.html https://github.com/ || echo '$(date)\n Failed wget to https://github.com/' > /init/index.html
+
+  containers:
+    - name: webserver
+      image: nginx:1.25.5-bookworm
+      ports:
+        - containerPort: 8000
+      volumeMounts:
+        - name: homework-vol
+          mountPath: /homework
+        - name: nginx-conf
+          mountPath: /etc/nginx/conf.d/
+          readOnly: true
+      lifecycle:
+        preStop:
+          exec:
+            command: ["rm", "-f", "/homework/index.html"]
+
+  volumes:
+    - name: homework-vol
+      emptyDir: 
+        sizeLimit: 250Mi
+    - name: nginx-conf
+      configMap:
+        name: nginx-config
