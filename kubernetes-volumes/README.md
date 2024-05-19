@@ -1,8 +1,14 @@
 ## ДЗ#4 Volumes, StorageClass, PV, PVC 
 
 ### Задания:
+- Создать манифест pvc.yaml, описывающий PersistentVolumeClaim, запрашивающий хранилище с storageClass по умолчанию
+- Создать манифест cm.yaml для объекта типа configMap, описывающий произвольный набор пар ключ-значение
+- В манифесте deployment.yaml изменить спецификацию volume типа emptyDir, который монтируется в init и основной контейнер, на pvc, созданный в предыдущем пункте
+- В манифесте deployment.yaml добавить монтирование ранее созданного configMap как volume к основному контейнеру пода в директорию /homework/conf, так, чтобы его содержимое можно было получить, обратившись по url /conf/file
 
-#### Задание с *
+#### Задание с *:
+- Создать манифест storageClass.yaml, описывающий объект типа storageClass с provisioner https://k8s.io/minikube-hostpath и reclaimPolicy Retain
+- Изменить манифест pvc.yaml так, чтобы в нем запрашивалось хранилище созданного вами storageClass'а
 
 ### Подготовка
 1. Необходимо убедиться, что на ноде есть label `homework=true`, это можно посмотреть командой `kubectl get nodes --show-labels`. В моем случае, label уже есть на нужной ноде. Если label нет, его необходимо создать командой `kubectl label nodes <node-name> homework=true`  
