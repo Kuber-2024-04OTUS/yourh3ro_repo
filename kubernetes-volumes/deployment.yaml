@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webserver
+  namespace: homework
+  labels:
+    app: webserver
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  replicas: 3
+  selector:
+    matchLabels:
+      app: webserver
+  template:
+    metadata:
+      labels:
+        app: webserver
+    spec:
+      initContainers:
+        - name: init-websever
+          image: busybox:1.36.1
+          command: ["/bin/sh", "-c"]
+          volumeMounts:
+            - name: pvc-nginx
+              mountPath: /init
+          args:
+            - wget -O /init/index.html https://github.com/ || echo 'Failed wget to https://github.com/' > /init/index.html
+
+      containers:
+        - name: webserver
+          image: nginx:1.26.0-bookworm
+          ports:
+            - containerPort: 8000
+              name: webserver-port
+          volumeMounts:
+            - name: pvc-nginx
+              mountPath: /homework/
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d/
+              readOnly: true
+            - name: app-configmap
+              mountPath: /homework/conf/
+              readOnly: true
+          lifecycle:
+            preStop:
+              exec:
+                command: ["rm", "-f", "/homework/conf/index.html"]
+          readinessProbe:
+            httpGet:
+              path: /index.html
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+
+      volumes:
+        - name: pvc-nginx
+          persistentVolumeClaim:
+            claimName: pvc-nginx
+        - name: nginx-conf
+          configMap:
+            name: nginx-config
+        - name: app-configmap
+          configMap:
+            name: app-configmap
+            
+
+      nodeSelector:
+        homework: "true"
+
