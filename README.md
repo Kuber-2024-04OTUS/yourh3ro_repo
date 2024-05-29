@@ -3,3 +3,19 @@
 [ДЗ#2 Kubernetes controllers. ReplicaSet, Deployment, DaemonSet](kubernetes-controllers/README.md)  
 [ДЗ#3 Сетевое взаимодействие Pod, сервисы](kubernetes-networks/README.md)  
 [ДЗ#4 Volumes, StorageClass, PV, PVC](kubernetes-volumes/README.md)  
+[ДЗ#5 Настройка сервисных аккаунтов и ограничение прав для них](kubernetes-security/README.md) 
+
+## Tricks, Tools, Hints
+
+### k9s
+[K9s - Kubernetes CLI To Manage Your Clusters In Style!](https://github.com/derailed/k9s) - CUI for k8s clusters  
+https://habr.com/ru/companies/flant/articles/524196/ - статья по функция и возможностям  
+
+Установка:  
+На странице есть инструкции пол установке под все платформы. 
+Для Ubuntu 22.04.4 LTS (WSL2)
+```sh
+curl -L https://github.com/derailed/k9s/releases/download/v0.32.4/k9s_linux_amd64.deb -o k9s.deb
+sudo dpkg -i k9s.deb
+```
+
