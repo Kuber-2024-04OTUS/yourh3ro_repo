@@ -1,0 +1,154 @@
+# Имя создаваемого namespace
+namespace: homework
+
+# Включение notes
+notes:
+  enabled: true
+
+# Настройки сервиса
+service:
+  enabled: true
+  name: webserver-svc
+  labels:
+    app: webserver-svc
+  appLabel: webserver-svc
+  type: ClusterIP
+  selector:
+    app: webserver
+  ports:
+    name: websrv-svc-port
+    port: 8000
+    targetPort: webserver-port
+
+# Настройки storageClass
+storageClass:
+  enabled: true
+  name: homework-sc-hostpath
+  provisioner: docker.io/hostpath
+  reclaimPolicy: Retain
+  volumeBindingMode: Immediate 
+
+# Настройки pvs
+pvc:
+  enabled: true
+  name: pvc-nginx
+  storageClassName: homework-sc-hostpath
+  accessModes: ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+
+# Настройки ingress
+ingress:
+  enabled: true
+  name: ingress-nginx
+  labels:
+    app: ingress-nginx
+  ingressClassName: nginx
+  host: homework.otus
+  paths:
+    path: /
+    pathType: Prefix
+    backend:
+      service:
+        name: webserver-svc
+        port:
+          name: websrv-svc-port
+
+# Настройки для serviceAccount cd
+adminrbac:
+  enabled: true
+  create_token: true
+  serviceAccount:
+    name: cd
+  role:
+    name: admin
+    rules:
+    - apiGroups: [""]
+      resources: ["*"]
+      verbs: ["*"]
+  roleBinding:
+    name: admin-rb 
+
+# настройки serviceAccount monitoring
+metricsrbac:
+  enabled: true
+  serviceAccount:
+    name: monitoring
+  clusterRole:
+    name: monitoring-get
+    rules:
+      - nonResourceURLs:
+          - "/metrics"
+        verbs:
+          - get
+  clusterRoleBinding:
+    name: monitoring-get-rb
+
+# configmap приложения
+appconfigmap:
+  name: app-config-map
+  data:
+    appsettings.env: |
+      TIME_ZONE: Europe/Moscow
+      LOG_LEVEL: INFO
+
+# configmap веб сервера
+nginxConfigmap:
+  name: nginx-config
+  data:
+    nginx.conf: |
+      server {
+        listen       8000;
+        server_name  localhost;
+
+        location / {
+          root   /homework;
+          index  index.html;
+        }
+      }
+
+# Настройки deployment
+deployment:
+  name: webserver
+  replicas: 3
+  labels:
+    app: webserver
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  metricInitContainer:
+    enabled: true
+    name: fetch-metrics
+    image:
+      name: curlimages/curl
+      tag: 8.8.0
+  webserverInitContainer:
+    enabled: true
+    name: init-websever
+    image:
+      name: busybox
+      tag: 1.36.1
+  webserverContainer:
+    name: webserver
+    image:
+      name: nginx
+      tag: 1.26.0-bookworm
+    ports:
+      - containerPort: 8000
+        name: webserver-port
+    volumeMounts:
+      - name: pvc-nginx
+        mountPath: /homework/
+      - name: nginx-conf
+        mountPath: /etc/nginx/conf.d/
+        readOnly: true
+      - name: app-configmap
+        mountPath: /homework/conf/
+        readOnly: true
+    preStop:
+      enabled: true
+    readinessProbe: 
+      enabled: true

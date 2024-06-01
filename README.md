@@ -4,7 +4,7 @@
 [ДЗ#3 Сетевое взаимодействие Pod, сервисы](kubernetes-networks/README.md)  
 [ДЗ#4 Volumes, StorageClass, PV, PVC](kubernetes-volumes/README.md)  
 [ДЗ#5 Настройка сервисных аккаунтов и ограничение прав для них](kubernetes-security/README.md) 
-
+[ДЗ#6 Шаблонизация манифестов приложения, использование Helm. Установка community Helm charts.](kubernetes-templating/README.md)
 ## Tricks, Tools, Hints
 
 ### k9s

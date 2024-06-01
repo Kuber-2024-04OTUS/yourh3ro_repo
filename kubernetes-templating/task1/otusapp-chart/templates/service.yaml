@@ -1,0 +1,18 @@
+{{- if .Values.service.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- toYaml .Values.service.labels | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- toYaml .Values.service.selector | nindent 4 }}
+  ports:
+    - name: {{ .Values.service.ports.name }}
+      protocol: TCP
+      port: {{ .Values.service.ports.port }}
+      targetPort: {{ .Values.service.ports.targetPort }}
+{{- end }}

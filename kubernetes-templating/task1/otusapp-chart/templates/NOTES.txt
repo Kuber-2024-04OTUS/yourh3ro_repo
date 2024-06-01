@@ -1,0 +1,33 @@
+{{- if .Values.notes.enabled }}
+
+{{- if .Values.service.enabled }}
+Your {{ .Values.deployment.name }} Deployment has been installed and is running in the {{ .Values.namespace }} namespace.
+
+{{- if .Values.ingress.enabled }}
+
+To access your webserver via Ingress, use:
+http://{{ .Values.ingress.host }}
+or to otus app:
+http://{{ .Values.ingress.host }}/index.html
+{{- if .Values.deployment.metricInitContainer.enabled }}
+or get metrics
+http://{{ .Values.ingress.host }}/metrics.html
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.deployment.webserverContainer.readinessProbe.enabled }}
+
+A readiness probe has been configured for the webserver container.
+
+{{- end }}
+
+For more information on how to interact with your deployment, you can run the following commands:
+
+Check the status of the Deployment:
+kubectl --namespace {{ .Values.namespace }} get deployment {{ .Values.deployment.name }}
+
+Check the status of your Pods:
+kubectl --namespace {{ .Values.namespace }} get pods -l app={{ .Values.deployment.labels.app }}
+
+{{- end }}

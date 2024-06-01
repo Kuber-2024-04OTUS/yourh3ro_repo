@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.nginxConfigmap.name }}
+  namespace: {{ .Values.namespace }}
+data:
+{{- toYaml .Values.nginxConfigmap.data | nindent 2 }}

@@ -1,0 +1,31 @@
+{{- if .Values.metricsrbac.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.metricsrbac.serviceAccount.name }}
+  namespace: {{ .Values.namespace }}
+{{- end }}
+---
+{{- if .Values.metricsrbac.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.metricsrbac.clusterRole.name }}
+rules:
+{{ toYaml .Values.metricsrbac.clusterRole.rules | indent 2 }}
+{{- end }}
+---
+{{- if .Values.metricsrbac.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.metricsrbac.clusterRoleBinding.name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.metricsrbac.serviceAccount.name }}
+    namespace: {{ .Values.namespace }}
+roleRef:
+  kind: ClusterRole
+  name: {{ .Values.metricsrbac.clusterRole.name }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

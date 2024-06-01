@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- toYaml .Values.deployment.labels | nindent 4 }}
+spec:
+  strategy:
+    {{- toYaml .Values.deployment.strategy | nindent 4 }}
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      {{- toYaml .Values.deployment.labels | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- toYaml .Values.deployment.labels | nindent 8 }}
+    spec:
+      {{- if .Values.metricsrbac.enabled }}
+      serviceAccountName: {{ .Values.metricsrbac.serviceAccount.name }}
+      {{- end }}
+      
+      initContainers:
+          {{- if .Values.deployment.webserverInitContainer.enabled }}
+        - name: {{ .Values.deployment.webserverInitContainer.name }}
+          image: {{ .Values.deployment.webserverInitContainer.image.name }}:{{ .Values.deployment.webserverInitContainer.image.tag }}
+          volumeMounts:
+            - name: pvc-nginx
+              mountPath: /init
+          command: ["/bin/sh", "-c"]
+          args:
+            - wget -O /init/index.html https://github.com/ || echo 'Failed wget to https://github.com/' > /init/index.html
+          {{- end }}
+
+        {{- if .Values.metricsrbac.enabled }}
+        {{- if .Values.deployment.metricInitContainer.enabled }}
+        - name: {{ .Values.deployment.metricInitContainer.name }}
+          image: {{ .Values.deployment.metricInitContainer.image.name }}:{{ .Values.deployment.metricInitContainer.image.tag }}
+          volumeMounts:
+            - name: pvc-nginx
+              mountPath: /init
+          command: ["/bin/sh", "-c"]
+          args:
+            - >
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) &&
+              curl -k -H "Authorization: Bearer $TOKEN" -o /init/metrics.html https://kubernetes.docker.internal:6443/metrics ||
+              echo 'Failed to fetch metrics' > /init/metrics.html
+        {{- end }}
+        {{- end }}
+
+
+      containers:
+        - name: {{ .Values.deployment.webserverContainer.name }}
+          image: {{ .Values.deployment.webserverContainer.image.name }}:{{ .Values.deployment.webserverContainer.image.tag }}
+          ports:
+            {{- toYaml .Values.deployment.webserverContainer.ports | nindent 12 }}
+          volumeMounts:
+            {{- toYaml .Values.deployment.webserverContainer.volumeMounts | nindent 12 }}
+          {{- if .Values.deployment.webserverContainer.preStop.enabled }}
+          lifecycle:
+            preStop:
+              exec:
+                command: ["rm", "-f", "/homework/conf/index.html"]
+          {{- end }}
+          {{- if .Values.deployment.webserverContainer.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /index.html
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+          {{- end }}
+
+      volumes:
+        - name: pvc-nginx
+          persistentVolumeClaim:
+            claimName: pvc-nginx
+        - name: nginx-conf
+          configMap:
+            name: nginx-config
+        - name: app-configmap
+          configMap:
+            name: app-config-map
+            
+
+      nodeSelector:
+        homework: "true"
+

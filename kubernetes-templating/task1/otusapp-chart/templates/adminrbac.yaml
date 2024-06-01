@@ -1,0 +1,33 @@
+{{- if .Values.adminrbac.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.adminrbac.serviceAccount.name }}
+  namespace: {{ .Values.namespace }}
+{{- end }}
+---
+{{- if .Values.adminrbac.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ .Values.adminrbac.role.name }}
+  namespace: {{ .Values.namespace }}
+rules:
+{{ toYaml .Values.adminrbac.role.rules | indent 2 }}
+{{- end }}
+---
+{{- if .Values.adminrbac.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .Values.adminrbac.roleBinding.name }}
+  namespace: {{ .Values.namespace }}
+subjects:
+- kind: ServiceAccount
+  name: {{ .Values.adminrbac.serviceAccount.name }}
+  namespace: {{ .Values.namespace }}
+roleRef:
+  kind: Role
+  name: {{ .Values.adminrbac.role.name }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

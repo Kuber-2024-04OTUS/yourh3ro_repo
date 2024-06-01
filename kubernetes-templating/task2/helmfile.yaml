@@ -1,0 +1,38 @@
+repositories:
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+
+releases:
+  - name: kafka-prod
+    namespace: prod
+    chart: bitnami/kafka
+    values:
+      - brokers: 5
+      - image:
+          tag: 3.5.2
+      - auth:
+          clientProtocol: sasl
+          interBrokerProtocol: sasl_plaintext
+          sasl:
+            jaas:
+              enabled: false
+            plain:
+              enabled: true
+              user: user
+              password: password
+
+  - name: kafka-dev
+    namespace: dev
+    chart: bitnami/kafka
+    values:
+      - brokers: 1
+      - image:
+          tag: latest
+      - auth:
+          clientProtocol: plaintext
+          interBrokerProtocol: plaintext
+          sasl:
+            jaas:
+              enabled: false
+            plain:
+              enabled: false
