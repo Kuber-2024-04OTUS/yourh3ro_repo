@@ -1,0 +1,15 @@
+apiVersion: mysql.otus.homework/v1
+kind: MySQL
+metadata:
+  labels:
+    app.kubernetes.io/name: golang-mysql-crd
+    app.kubernetes.io/managed-by: kustomize
+  name: mysql-sample
+spec:
+  name: yourhero-db
+  image: mysql:5.7
+  database: urdb
+  user: user
+  password: userpa$$word
+  rootPassword: rootpa$$word
+  storage: 10Gi
