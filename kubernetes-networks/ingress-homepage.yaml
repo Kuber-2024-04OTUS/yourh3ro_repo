@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-nginx-homepage
+  namespace: homework
+  labels:
+    app: ingress-nginx-homepage
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: homework.otus
+    http:
+      paths:
+      - path: /homepage
+        pathType: Prefix
+        backend:
+          service:
+            name: webserver-svc
+            port:
+              name: websrv-svc-port
+  ingressClassName: nginx

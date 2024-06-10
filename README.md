@@ -104,6 +104,11 @@ nodeSelector:
 
 #### Задание с *
 - Доработать манифест ingress.yaml, описав в нем rewrite-правила так, чтобы обращение по адресу http://homework.otus/index.html форвардилось на http://homework.otus/homepage.
+UPD:
+```
+Здравствуйте!
+Уточнил по поводу задания со * - запрос на http://homework.otus/homepage должен отдавать контент index.html, что нужно сделать через rewrite в ingress соответственно
+```
 
 ### Подготовка
 1. Необходимо убедиться, что на ноде есть label `homework=true`, это можно посмотреть командой `kubectl get nodes --show-labels`. В моем случае, label уже есть на нужной ноде. Если label нет, его необходимо создать командой `kubectl label nodes <node-name> homework=true`  
@@ -115,7 +120,6 @@ echo "127.0.0.1 homework.otus" | sudo tee -a /etc/hosts
 ## Запуск 
 1. Создать namespace командой `kubectl apply -f kubernetes-networks/namespase.yaml`
 2. Создать остальные ресурсы командой `kubectl apply -f kubernetes-networks/`
-![alt text](./img/image2.png)
 
 ### Описание решения
 1. Файлы `configmap-nginx-config.yaml`, `deployment.yaml`, `namespace.yaml` наследованы из прошлого ДЗ 
@@ -175,6 +179,32 @@ rules:
             name: websrv-svc-port
 ```
 Имя порта `name: websrv-svc-port` определено в `service.yaml` для удобства (см. п 3)
+
+5. В файле `ingress-homepage.yaml` выполнено задание с *, rewrite что бы запросы на /hopmepage перенаправлялись на /, то есть на "основной" ingress-nginx
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-nginx
+  namespace: homework
+  labels:
+    app: ingress-nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: homework.otus
+    http:
+      paths:
+      - path: /homepage
+        pathType: Prefix
+        backend:
+          service:
+            name: webserver-svc
+            port:
+              name: websrv-svc-port
+  ingressClassName: nginx
+```
 
 ### Проверка
 1. Работу readiness пробы можно проверить командой 
