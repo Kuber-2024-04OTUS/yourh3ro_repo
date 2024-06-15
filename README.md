@@ -6,6 +6,8 @@
 [ДЗ#5 Настройка сервисных аккаунтов и ограничение прав для них](kubernetes-security/README.md)  
 [ДЗ#6 Шаблонизация манифестов приложения, использование Helm. Установка community Helm charts.](kubernetes-templating/README.md)  
 [ДЗ#7 Создание собственного CRD](kubernetes-operators/README.md)  
+[ДЗ#8 Мониторинг приложения в кластере](kubernetes-monitoring/README.md)   
+
 ## Tricks, Tools, Hints
 
 ### k9s

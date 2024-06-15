@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-exporter 
+  labels:
+    app: nginx-exporter
+spec:
+  ports:
+  - name: nginx-exporter
+    port: 9113
+    targetPort: nginx-exporter
+  selector:
+    app: nginx-exporter
