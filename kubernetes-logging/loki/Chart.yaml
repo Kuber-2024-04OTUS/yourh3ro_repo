@@ -1,0 +1,17 @@
+name: loki
+home: ""
+sources: []
+version: 1.1.2
+description: Grafana Loki
+keywords: []
+maintainers: []
+icon: ""
+apiversion: v1
+condition: ""
+tags: ""
+appversion: 1.0.4
+deprecated: false
+annotations: {}
+kubeversion: ""
+dependencies: []
+type: ""
