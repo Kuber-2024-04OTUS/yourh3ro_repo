@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kubernetes-tempalting-app
+  namespace: argocd
+spec:
+  project: otus-project
+  source:
+    path: kubernetes-templating/task1/otusapp-chart
+    repoURL: https://github.com/Kuber-2024-04OTUS/yourh3ro_repo.git
+    targetRevision: kubernetes-tempalting
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: HomeworkHelm
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    
