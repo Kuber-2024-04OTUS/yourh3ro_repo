@@ -11,6 +11,7 @@
 [ДЗ#10 GitOps и инструменты поставки](kubernetes-gitops/README.md)   
 [ДЗ#11 Хранилище секретов для приложения. Vault.](kubernetes-vault/README.md)   
 [ДЗ#12 Установка и использование CSI драйвера](kubernetes-csi/README.md)   
+[ДЗ#13 Диагностика и отладка в Kubernetes](kubernetes-debug/README.md)   
 ## Tricks, Tools, Hints
 
 ### k9s

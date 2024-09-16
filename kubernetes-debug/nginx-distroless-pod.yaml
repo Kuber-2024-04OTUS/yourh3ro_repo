@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: websrv
+  namespace: debug
+spec:
+  containers:
+  - image: kyos0109/nginx-distroless:1.18.0
+    name: websrv
+    ports:
+    - containerPort: 80
+      name: http
+      
