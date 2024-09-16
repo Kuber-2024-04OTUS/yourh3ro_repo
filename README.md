@@ -9,6 +9,7 @@
 [ДЗ#8 Мониторинг приложения в кластере](kubernetes-monitoring/README.md)   
 [ДЗ#9 Сервисы централизованного логирования для Kubernetes](kubernetes-logging/README.md)   
 [ДЗ#10 GitOps и инструменты поставки](kubernetes-gitops/README.md)   
+[ДЗ#11 Хранилище секретов для приложения. Vault.](kubernetes-vault/README.md)   
 ## Tricks, Tools, Hints
 
 ### k9s
