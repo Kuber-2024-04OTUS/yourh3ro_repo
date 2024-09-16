@@ -10,6 +10,7 @@
 [ДЗ#9 Сервисы централизованного логирования для Kubernetes](kubernetes-logging/README.md)   
 [ДЗ#10 GitOps и инструменты поставки](kubernetes-gitops/README.md)   
 [ДЗ#11 Хранилище секретов для приложения. Vault.](kubernetes-vault/README.md)   
+[ДЗ#12 Установка и использование CSI драйвера](kubernetes-csi/README.md)   
 ## Tricks, Tools, Hints
 
 ### k9s
