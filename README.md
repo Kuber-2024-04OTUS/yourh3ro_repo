@@ -12,6 +12,7 @@
 [ДЗ#11 Хранилище секретов для приложения. Vault.](kubernetes-vault/README.md)   
 [ДЗ#12 Установка и использование CSI драйвера](kubernetes-csi/README.md)   
 [ДЗ#13 Диагностика и отладка в Kubernetes](kubernetes-debug/README.md)   
+[ДЗ#14 Подходы к развертыванию и обновлению production-grade кластера](kubernetes-prod/README.md)   
 ## Tricks, Tools, Hints
 
 ### k9s
@@ -25,4 +26,3 @@ https://habr.com/ru/companies/flant/articles/524196/ - статья по фун�
 curl -L https://github.com/derailed/k9s/releases/download/v0.32.4/k9s_linux_amd64.deb -o k9s.deb
 sudo dpkg -i k9s.deb
 ```
-
