@@ -1,0 +1,1 @@
+export KUBECONFIG=/home/urhero/otus/project/yourh3ro_repo/kubernetes-project/k3s-install/k3s-kubeconfig.yml

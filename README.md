@@ -26,3 +26,12 @@ https://habr.com/ru/companies/flant/articles/524196/ - статья по фун�
 curl -L https://github.com/derailed/k9s/releases/download/v0.32.4/k9s_linux_amd64.deb -o k9s.deb
 sudo dpkg -i k9s.deb
 ```
+
+### krew менеджер плагинов kubectl
+https://krew.sigs.k8s.io/docs/user-guide/setup/install/
+
+### kubeconfig-manager менеджер kubeconfig
+https://github.com/kalgurn/kubeconfig-manager
+
+### k3sup утилита для создания кластеров k3s
+https://github.com/alexellis/k3sup

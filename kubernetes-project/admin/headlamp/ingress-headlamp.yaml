@@ -1,0 +1,21 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: headlamp
+  namespace: kube-system
+  annotations:
+    kubernetes.io/tls-acme: "false"
+spec:
+  rules:
+  -
+    host: headlamp.158.160.5.137.nip.io
+    http:
+      paths: 
+      -
+        path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: headlamp
+            port:
+              number: 80

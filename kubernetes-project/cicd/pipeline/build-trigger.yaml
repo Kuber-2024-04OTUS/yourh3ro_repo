@@ -1,0 +1,131 @@
+# apiVersion: triggers.tekton.dev/v1alpha1
+# kind: TriggerTemplate
+# metadata:
+#   name: app-build-template
+# spec:
+#   params:
+#     - name: git-url
+#     - name: git-revision
+#     - name: image-url
+#     - name: pipeline-name
+#   resourcetemplates:
+#     - apiVersion: tekton.dev/v1beta1
+#       kind: PipelineRun
+#       metadata:
+#         generateName: pipeline-run-
+#       spec:
+#         pipelineRef:
+#           #name: $(params.pipeline-name)
+#           name: dotnet-app-pipeline
+#         params:
+#           - name: git-url
+#             value: $(params.git-url)
+#           - name: git-revision
+#             value: $(params.git-revision)
+#           - name: image-url
+#             value: $(params.image-url)
+#         workspaces:
+#           - name: shared-workspace
+#             persistentVolumeClaim:
+#               claimName: shared-workspace-pvc
+# ---
+# apiVersion: triggers.tekton.dev/v1alpha1
+# kind: TriggerBinding
+# metadata:
+#   name: dotnet-app-binding
+# spec:
+#   params:
+#     - name: git-url
+#       value: $(body.repository.clone_url)
+#     - name: git-revision
+#       value: $(body.ref)
+#     - name: image-url
+#       value: harbor.158.160.5.137.nip.io/library/dotnet-app:latest
+#     - name: pipeline-name
+#       value: dotnet-app-pipeline
+# ---
+# apiVersion: triggers.tekton.dev/v1alpha1
+# kind: TriggerBinding
+# metadata:
+#   name: go-app-binding
+# spec:
+#   params:
+#     - name: git-url
+#       value: $(body.repository.clone_url)
+#     - name: git-revision
+#       value: $(body.ref)
+#     - name: image-url
+#       value: harbor.158.160.5.137.nip.io/library/go-app:latest
+#     - name: pipeline-name
+#       value: go-app-pipeline
+# ---
+# apiVersion: triggers.tekton.dev/v1alpha1
+# kind: TriggerBinding
+# metadata:
+#   name: python-app-binding
+# spec:
+#   params:
+#     - name: git-url
+#       value: $(body.repository.clone_url)
+#     - name: git-revision
+#       value: $(body.ref)
+#     - name: image-url
+#       value: harbor.158.160.5.137.nip.io/library/python-app:latest
+#     - name: pipeline-name
+#       value: python-app-pipeline
+# ---
+# apiVersion: triggers.tekton.dev/v1alpha1
+# kind: EventListener
+# metadata:
+#   name: app-build-listener
+# spec:
+#   triggers:
+#     - name: dotnet-app-trigger
+#       bindings:
+#         - ref: dotnet-app-binding
+#       template:
+#         ref: app-build-template
+#     # - name: go-app-trigger
+#     #   bindings:
+#     #     - ref: go-app-binding
+#     #   template:
+#     #     ref: app-build-template
+#     # - name: python-app-trigger
+#     #   bindings:
+#     #     - ref: python-app-binding
+#     #   template:
+#     #     ref: app-build-template
+#   serviceAccountName: pipeline
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: el-app-build-listener-svc
+# spec:
+#   ports:
+#     - protocol: TCP
+#       port: 8080
+#       targetPort: 8080
+#   selector:
+#     eventlistener: app-build-listener
+# ---
+# kind: Ingress
+# apiVersion: networking.k8s.io/v1
+# metadata:
+#   name: el-app-build-listener-ing
+#   annotations:
+#     kubernetes.io/tls-acme: "false"
+# spec:
+#   rules:
+#   -
+#     host: tekton-trigger.158.160.5.137.nip.io
+#     http:
+#       paths: 
+#       -
+#         path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: el-app-build-listener-svc
+#             port:
+#               number: 8080

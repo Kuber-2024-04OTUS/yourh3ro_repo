@@ -1,0 +1,21 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: argocd
+  namespace: argocd
+  annotations:
+    kubernetes.io/tls-acme: "false"
+spec:
+  rules:
+  -
+    host: argocd.158.160.5.137.nip.io
+    http:
+      paths: 
+      -
+        path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: argocd-server
+            port:
+              number: 80

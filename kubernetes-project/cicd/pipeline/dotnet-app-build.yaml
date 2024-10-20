@@ -1,0 +1,212 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shared-workspace-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: longhorn
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: dotnet-app-task
+spec:
+  params:
+    - name: git-url
+      description: The git repository URL
+      type: string
+    - name: git-revision
+      description: The git revision to checkout
+      type: string
+      default: main
+    - name: pathToDockerFile
+      description: Path to the Dockerfile
+      type: string
+      default: /workspace/repo/src/dotnet-app/Dockerfile
+    - name: pathToContext
+      description: Path to the build context
+      type: string
+      default: /workspace/repo/src/dotnet-app
+    - name: image-url
+      description: The destination image URL (registry/repo:tag)
+      type: string
+  workspaces:
+    - name: shared-workspace
+  volumes:
+    - name: docker-secret
+      secret:
+        secretName: harbor-registry-secret
+  steps:
+  
+    - name: git-clone
+      image: alpine/git
+      script: |
+        git clone $(params.git-url) /workspace/repo/
+        cd /workspace/repo/
+        git checkout $(params.git-revision)
+
+    - name: build-and-push
+      image: gcr.io/kaniko-project/executor:v1.23.2
+      env:
+        - name: DOCKER_CONFIG
+          value: /kaniko/.docker
+      args:
+        - --dockerfile=$(params.pathToDockerFile)
+        - --context=$(params.pathToContext)
+        - --destination=$(params.image-url)
+        - --insecure-registry=harbor.158.160.5.137.nip.io
+        - --skip-tls-verify
+      volumeMounts:
+        - name: docker-secret
+          mountPath: /kaniko/.docker/
+          readOnly: true
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: dotnet-app-pipeline
+spec:
+  params:
+    - name: git-url
+      description: The git repository URL
+      type: string
+      default: https://github.com/yourh3ro/otus-project-apps
+    - name: git-revision
+      description: The git revision to checkout
+      type: string
+      default: main
+    - name: image-url
+      description: The destination image URL (registry/repo:tag)
+      type: string
+      default: harbor.158.160.5.137.nip.io/library/dotnet-app:latest
+  workspaces:
+    - name: shared-workspace
+  tasks:
+    - name: build
+      taskRef:
+        name: dotnet-app-task
+      params:
+        - name: git-url
+          value: https://github.com/yourh3ro/otus-project-apps.git
+        - name: git-revision
+          value: $(params.git-revision)
+        - name: image-url
+          value: $(params.image-url)
+      workspaces:
+        - name: shared-workspace
+          workspace: shared-workspace
+---
+# apiVersion: tekton.dev/v1beta1
+# kind: PipelineRun
+# metadata:
+#   name: dotnet-app-pipeline-run
+# spec:
+#   pipelineRef:
+#     name: dotnet-app-pipeline
+#   params:
+#     - name: git-url
+#       value: https://github.com/yourh3ro/otus-project-apps
+#     - name: git-revision
+#       value: main
+#     - name: image-url
+#       value: harbor.158.160.5.137.nip.io/library/dotnet-app:latest
+#   workspaces:
+#     - name: shared-workspace
+#       persistentVolumeClaim:
+#         claimName: shared-workspace-pvc
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: dotnet-app-build-template
+spec:
+  params:
+    - name: git-url
+    - name: git-revision
+    - name: image-url
+    - name: pipeline-name
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        generateName: dotnet-pipeline-run-
+      spec:
+        pipelineRef:
+          name: dotnet-app-pipeline
+        params:
+          - name: git-url
+            value: https://github.com/yourh3ro/otus-project-apps.git
+          - name: git-revision
+            value: $(params.git-revision)
+          - name: image-url
+            value: harbor.158.160.5.137.nip.io/library/dotnet-app:latest
+        workspaces:
+          - name: shared-workspace
+            persistentVolumeClaim:
+              claimName: shared-workspace-pvc
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerBinding
+metadata:
+  name: dotnet-app-binding
+spec:
+  params:
+    - name: git-url
+      value: https://github.com/yourh3ro/otus-project-apps.git
+    - name: git-revision
+      value: $(body.ref)
+    - name: image-url
+      value: harbor.158.160.5.137.nip.io/library/dotnet-app:latest
+    - name: pipeline-name
+      value: dotnet-app-pipeline
+---
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: dotnet-app-build-listener
+spec:
+  triggers:
+    - name: dotnet-app-trigger
+      bindings:
+        - ref: dotnet-app-binding
+      template:
+        ref: dotnet-app-build-template
+  serviceAccountName: pipeline
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: el-dotnet-app-build-listener-svc
+spec:
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    eventlistener: dotnet-app-build-listener
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: el-dotnet-app-build-listener-ing
+  annotations:
+    kubernetes.io/tls-acme: "false"
+spec:
+  rules:
+  -
+    host: tekton-trigger-dotnet.158.160.5.137.nip.io
+    http:
+      paths: 
+      -
+        path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: el-dotnet-app-build-listener-svc
+            port:
+              number: 8080

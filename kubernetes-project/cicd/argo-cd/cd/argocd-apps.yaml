@@ -1,0 +1,56 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: go-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/yourh3ro/otus-project-apps' 
+    targetRevision: main
+    path: 'manifests/go-app/'
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: apps
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dotnet-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/yourh3ro/otus-project-apps'
+    targetRevision: main
+    path: 'manifests/dotnet-app/'
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: apps
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: python-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/yourh3ro/otus-project-apps'
+    targetRevision: main
+    path: 'manifests/python-app/'
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: apps
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
