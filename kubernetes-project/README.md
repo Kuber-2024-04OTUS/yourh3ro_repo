@@ -2,6 +2,156 @@
 ## Описание решения
 Данный проект направлен на создание и настройку кластера k3s с использованием различных инструментов и компонентов для управления и мониторинга приложений. Проект включает в себя установку инструментов CI/CD, мониторинга и администрирования, а также создание необходимых конфигураций для обеспечения их работы.
 
+### Установка
+### tldr
+1. Развенуть виртуальные машины с помощью `kubernetes-project/k3s-install/createVms.sh`
+2. После создания виртуальных машин установить k3s на виртуальные машины `kubernetes-project/k3s-install/installK3s.sh`
+3. После установки k3s установить все необходимые компоненты с помощью `kubernetes-project/installCluster.sh`
+### Описание установки
+Виртуальные машины разворачиваются в среде Yandex Cloud с помощью утилиты yc, команда `yc compute instance create`:
+Пример создания мастер ноды с описанием осноных параметров
+```shell
+# Создание нового узла
+yc compute instance create \
+    --folder-id $FOLDER_ID \  # Идентификатор папки, в которой создается виртуальная машина, получаю через FOLDER_ID=$(yc config get folder-id)
+    --name otus-k8s-master-0 \  # Уникальное имя виртуальной машины
+    --hostname otus-k8s-master-0 \  # Имя хоста для машины в сети
+    --labels role=master \  # Метка для машины, обозначающая ее роль (master)
+    --platform standard-v2 \  # Тип платформы процессора 
+    --zone ru-central1-b \  # ЦОД
+    --create-boot-disk image-family=ubuntu-2404-lts-oslogin,size=60,type=network-hdd,auto-delete=true \  
+        # Создание загрузочного диска:
+        # - `image-family=ubuntu-2404-lts-oslogin` — образ Ubuntu 24.04 
+        # - `size=60` — размер диска в ГБ
+        # - `type=network-hdd` — тип диска (сетевой, HDD)
+        # - `auto-delete=true` — диск будет автоматически удален при удалении VM
+    --image-folder-id standard-images \  # Идентификатор папки с базовыми образами (стандартные образы Яндекс.Облака)
+    --memory=8 \  # Объем оперативной памяти для машины (8 ГБ)
+    --cores=2 \  # Количество виртуальных ядер процессора (2 ядра)
+    --core-fraction=20 \  # Доля вычислительной мощности процессора (20% от одного физического ядра)
+    --preemptible \  # Машина будет прерываемой (дешевле, но может быть остановлена Яндекс.Облаком при нехватке ресурсов)
+    --network-settings type=standard \  # Тип подключения к сети (стандартное, без дополнительных настроек)
+    --network-interface subnet-name=default-ru-central1-b,nat-ip-version=ipv4 \  
+        # Сетевой интерфейс:
+        # - `subnet-name=default-ru-central1-b` — подсеть, к которой подключается VM
+        # - `nat-ip-version=ipv4` — NAT для публичного IPv4-адреса
+    --ssh-key $SSH_KEY \  # Публичный SSH-ключ для доступа к виртуальной машине
+    --metadata serial-port-enable=1 \  # Включает доступ к виртуальной машине через последовательный порт
+    --async  # Выполнение команды в асинхронном режиме (без ожидания завершения создания машины)
+
+```
+
+После завершения инициализации виртуальных машин с помощью утилиты [k3sup](https://github.com/alexellis/k3sup)
+```shell
+IP_VMs=$(yc compute instance list --format=json | jq -r '.[] | select(.name | startswith("otus-k8s")) | .network_interfaces[] | .primary_v4_address.one_to_one_nat.address' )
+SSH_PRIVATE_KEY=~/.ssh/id_ed25519
+
+MASTER_IP=$(yc compute instance list --format=json | jq -r '.[] | select(.name | startswith("otus-k8s-master")) | .network_interfaces[0].primary_v4_address.one_to_one_nat.address')
+WORKER_IPS=$(yc compute instance list --format=json | jq -r '.[] | select(.name | startswith("otus-k8s-worker")) | .network_interfaces[0].primary_v4_address.one_to_one_nat.address' | paste -s -d' ')
+
+# Установка k3s на мастер-узле
+./k3sup install \
+    --ssh-key $SSH_PRIVATE_KEY \  # Приватный SSH-ключ для подключения к узлу
+    --ip $MASTER_IP \  # IP-адрес мастер-узла
+    --user yc-user \  # Имя пользователя для SSH-подключения
+    --local-path ./k3s-kubeconfig.yml \  
+        # Локальный путь для сохранения kubeconfig (файл для подключения к кластеру)
+    --cluster \  
+        #  узел будет мастер-узлом (создается кластер)
+    --k3s-channel stable \  
+        # Указывает канал для установки k3s (stable — стабильная версия)
+    --k3s-extra-args '--cluster-cidr 10.42.0.0/16 --service-cidr 10.43.0.0/16 --write-kubeconfig-mode 644'  
+        # - `--cluster-cidr 10.42.0.0/16` — диапазон IP-адресов для подсети кластерных подов
+        # - `--service-cidr 10.43.0.0/16` — диапазон IP-адресов для подсети сервисов
+        # - `--write-kubeconfig-mode 644` — задает права на kubeconfig (чтение для всех)
+
+# Установка k3s на воркер-узлах
+for WORKER in $WORKER_IPS; do  # Перебор всех IP-адресов воркер-узлов
+    ./k3sup join \
+        --ssh-key $SSH_PRIVATE_KEY \  # Приватный SSH-ключ для подключения к узлу
+        --ip $WORKER \  # IP-адрес воркер-узла
+        --server-ip $MASTER_IP \  # IP-адрес мастер-узла (для подключения воркер-узла к кластеру)
+        --user yc-user  # Имя пользователя для SSH-подключения
+done
+
+```
+Так же в составе дистрибутива k3s уже есть некоторые компоненты кластера, такие как:
+[Docs](https://docs.k3s.io/)
+Packages the required dependencies for easy "batteries-included" cluster creation:
+- containerd / cri-dockerd container runtime (CRI)
+- Flannel Container Network Interface (CNI)
+- CoreDNS Cluster DNS
+- **Traefik Ingress controller**
+- ServiceLB Load-Balancer controller
+- Kube-router Network Policy controller
+- Local-path-provisioner Persistent Volume controller
+- Spegel distributed container image registry mirror
+- Host utilities (iptables, socat, etc)
+
+После установки и инициализации кластера k3s можно устанавливать сервисы в кластер с помощью скрипта `kubernetes-project/installCluster.sh`
+Скрипт большой, по этому я удалил бОльшую часть кода и оставил краткое описание:
+```shell
+#!/bin/bash
+set -e
+# Экспортируем переменную окружения KUBECONFIG для доступа в кластер
+export KUBECONFIG=$(pwd)/k3s-install/k3s.yaml
+
+log () {
+  # логирование
+}
+
+ensure_namespace () {
+  # Вспомогательная функция для создания namespace
+}
+
+install_admin_tools () {
+  # Установка headlamp, longhorn и включение traefik dashboard
+}
+
+install_registry () {
+  # Установка Harbor
+}
+
+# Функция для установки CI/CD инструментов
+install_cicd_tools () {
+  # Установка Tekton и ArgoCD
+}
+
+init_ci_pipeline () {
+  # Создание ресурсов Tekton для CI приложений
+}
+init_cd_pipeline () {
+  # Создаение ArgoCD Application для деплоя приложений
+}
+install_monitoring () {
+  # Установка kube-prometheus-stack
+}
+
+main () {
+    log "Installing admin tools..."
+    install_admin_tools
+
+    log "Installing registry..."
+    install_registry
+
+    log "Installing CI/CD tools..."
+    install_cicd_tools
+
+    log "Initializing CI/CD pipeline..."
+    init_ci_pipeline
+
+    log "Initializing CD pipeline..."
+    init_cd_pipeline
+
+    log "Installing monitoring..."
+    install_monitoring
+}
+
+main "$@"
+```
+Полный скрипт можно найти в `yourh3ro_repo/kubernetes-project/installCluster.sh`
+
+
 ### K3s
 ```
 ├── k3s-install         

@@ -12,7 +12,7 @@ yc compute instance create \
     --labels role=master \
     --platform standard-v2 \
     --zone ru-central1-b \
-    --create-boot-disk image-family=ubuntu-2404-lts-oslogin,size=30,type=network-hdd,auto-delete=true \
+    --create-boot-disk image-family=ubuntu-2404-lts-oslogin,size=60,type=network-hdd,auto-delete=true \
     --image-folder-id standard-images \
     --memory=8 \
     --cores=2 \
