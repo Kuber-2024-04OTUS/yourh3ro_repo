@@ -13,6 +13,7 @@
 [ДЗ#12 Установка и использование CSI драйвера](kubernetes-csi/README.md)   
 [ДЗ#13 Диагностика и отладка в Kubernetes](kubernetes-debug/README.md)   
 [ДЗ#14 Подходы к развертыванию и обновлению production-grade кластера](kubernetes-prod/README.md)   
+[Project MVP Platform](kubernetes-project/README.md)   
 ## Tricks, Tools, Hints
 
 ### k9s
